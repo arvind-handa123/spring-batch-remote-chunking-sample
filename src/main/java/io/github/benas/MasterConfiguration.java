@@ -14,6 +14,7 @@ import org.springframework.batch.integration.chunk.RemoteChunkHandlerFactoryBean
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -103,20 +104,23 @@ public class MasterConfiguration {
 	}
 
 	@Bean
-	public RemoteChunkHandlerFactoryBean<Integer> chunkHandler() {
-		RemoteChunkHandlerFactoryBean<Integer> remoteChunkHandlerFactoryBean = new RemoteChunkHandlerFactoryBean<>();
-		remoteChunkHandlerFactoryBean.setChunkWriter(itemWriter());
-		remoteChunkHandlerFactoryBean.setStep(masterStep());
-		return remoteChunkHandlerFactoryBean;
-	}
-
-	@Bean
 	public TaskletStep masterStep() {
-		return this.stepBuilderFactory.get("masterStep")
+		TaskletStep masterStep = this.stepBuilderFactory.get("masterStep")
 				.<Integer, Integer>chunk(3)
 				.reader(itemReader())
-				.writer(itemWriter())
+				.writer(items -> {})
 				.build();
+
+		RemoteChunkHandlerFactoryBean<Integer> remoteChunkHandlerFactoryBean = new RemoteChunkHandlerFactoryBean<>();
+		remoteChunkHandlerFactoryBean.setChunkWriter(itemWriter());
+		remoteChunkHandlerFactoryBean.setStep(masterStep);
+		try {
+			remoteChunkHandlerFactoryBean.getObject();
+		} catch (Exception e) {
+			throw new BeanCreationException("Unable to create ChunkHandler", e);
+		}
+
+		return masterStep;
 	}
 
 	@Bean
