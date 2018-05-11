@@ -92,15 +92,11 @@ public class WorkerConfiguration {
 	}
 
 	@Bean
-	public ChunkProcessor<Integer> chunkProcessor() {
-		return new SimpleChunkProcessor<>(itemProcessor(), itemWriter());
-	}
-
-	@Bean
 	@ServiceActivator(inputChannel = "requests", outputChannel = "replies")
 	public ChunkProcessorChunkHandler<Integer> chunkProcessorChunkHandler() {
+		ChunkProcessor<Integer> chunkProcessor = new SimpleChunkProcessor<>(itemProcessor(), itemWriter());
 		ChunkProcessorChunkHandler<Integer> chunkProcessorChunkHandler = new ChunkProcessorChunkHandler<>();
-		chunkProcessorChunkHandler.setChunkProcessor(chunkProcessor());
+		chunkProcessorChunkHandler.setChunkProcessor(chunkProcessor);
 		return chunkProcessorChunkHandler;
 	}
 

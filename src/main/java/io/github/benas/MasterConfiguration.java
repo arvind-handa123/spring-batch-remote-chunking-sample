@@ -10,7 +10,6 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.integration.chunk.ChunkMessageChannelItemWriter;
-import org.springframework.batch.integration.chunk.RemoteChunkHandlerFactoryBean;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.ListItemReader;
@@ -88,26 +87,18 @@ public class MasterConfiguration {
 	 */
 
 	@Bean
-	public MessagingTemplate messagingTemplate() {
-		MessagingTemplate messagingTemplate = new MessagingTemplate();
-		messagingTemplate.setDefaultChannel(requests());
-		return messagingTemplate;
+	public ItemReader<Integer> itemReader() {
+		return new ListItemReader<>(Arrays.asList(1, 2, 3, 4, 5, 6));
 	}
 
 	@Bean
 	public ItemWriter<Integer> itemWriter() {
+		MessagingTemplate messagingTemplate = new MessagingTemplate();
+		messagingTemplate.setDefaultChannel(requests());
 		ChunkMessageChannelItemWriter<Integer> chunkMessageChannelItemWriter = new ChunkMessageChannelItemWriter<>();
-		chunkMessageChannelItemWriter.setMessagingOperations(messagingTemplate());
+		chunkMessageChannelItemWriter.setMessagingOperations(messagingTemplate);
 		chunkMessageChannelItemWriter.setReplyChannel(replies());
 		return chunkMessageChannelItemWriter;
-	}
-
-	@Bean
-	public RemoteChunkHandlerFactoryBean<Integer> chunkHandler() {
-		RemoteChunkHandlerFactoryBean<Integer> remoteChunkHandlerFactoryBean = new RemoteChunkHandlerFactoryBean<>();
-		remoteChunkHandlerFactoryBean.setChunkWriter(itemWriter());
-		remoteChunkHandlerFactoryBean.setStep(masterStep());
-		return remoteChunkHandlerFactoryBean;
 	}
 
 	@Bean
@@ -117,11 +108,6 @@ public class MasterConfiguration {
 				.reader(itemReader())
 				.writer(itemWriter())
 				.build();
-	}
-
-	@Bean
-	public ItemReader<Integer> itemReader() {
-		return new ListItemReader<>(Arrays.asList(1, 2, 3, 4, 5, 6));
 	}
 
 	@Bean
